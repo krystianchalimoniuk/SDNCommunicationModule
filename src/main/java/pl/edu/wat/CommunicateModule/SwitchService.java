@@ -19,9 +19,10 @@ import org.json.JSONObject;
 public class SwitchService {
 
 	public ArrayList<Switch> getAllSwitch() throws IOException, JSONException{
-		ArrayList<Switch> switchesArray=downloadSwitchInfoFloodlight("http://127.0.0.1:8080/wm/core/controller/switches/json");
+		ArrayList<Switch> switchesArray=downloadSwitchInfoFloodlight("http://127.0.0.1:8070/wm/core/controller/switches/json");
 		//TODO: Wywołać metodę pobierającą dane z RYU i zapisać jej wynik do ArrayList jak powyżej.Scalić obie tablice i zwrócić w returnie
-
+		ArrayList<Switch> switchesArrayRYU=downloadSwitchInfoRYU("http://127.0.0.1:8008/topology/switches/curl");
+        switchesArray.addAll(switchesArrayRYU);
 	return switchesArray;
 	}
 	
@@ -60,7 +61,39 @@ public class SwitchService {
 	}
 	
 	//TODO: Stworzyć metodę na podstawie powyższej pobierającą dane z RYU. Przeanalizować pola występujące w RYU i Floodlight oraz zostawić tylko wspólne
-	
+	public static ArrayList<Switch> downloadSwitchInfoRYU(String url) throws IOException, JSONException {
+		InputStream is=new URL(url).openStream();
+		ArrayList<Switch> switchesArray=new ArrayList<>();
+		try {
+			BufferedReader rd=new BufferedReader(new InputStreamReader(is,Charset.forName("UTF-8")));
+			String jsonText=readAll(rd);
+			
+			JSONArray ja=new JSONArray(jsonText);
+			JSONObject jo=null;
+			switchesArray.clear();
+			Switch switches;
+			for (int i=0;i<ja.length();i++) {
+				jo=ja.getJSONObject(i);
+				String dpid=jo.getString("dpid");
+				String controller="RYU";
+				String OPFversion="OF_13";
+				String inetAddress="Brak informacji";
+				switches=new Switch();
+				switches.setController(controller);
+				switches.setDpid(dpid);
+				switches.setOPFversion(OPFversion);
+				switches.setInetAddress(inetAddress);
+				switchesArray.add(switches);
+			
+			}
+			
+			
+			
+			return switchesArray;
+		}finally{
+			is.close();
+		}
+	}
 	
 	private static String readAll(Reader rd) throws IOException {
 		StringBuilder sb=new StringBuilder();
